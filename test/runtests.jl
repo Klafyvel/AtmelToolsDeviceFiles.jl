@@ -10,5 +10,5 @@ using JET
     @testset "Code linting (JET.jl)" begin
         JET.test_package(AtmelToolsDeviceFiles; target_defined_modules = true)
     end
-    # Write your tests here.
+    include("artifacts.jl")
 end

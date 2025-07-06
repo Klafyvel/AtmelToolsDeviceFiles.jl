@@ -1,0 +1,15 @@
+[ATtinySeries]
+lazy = true
+git-tree-sha1 = "5049b6d3ab40e13d38f642f646703370fa6a9103"
+
+    [[ATtinySeries.download]]
+    sha256 = "ddd1da0a7f401bff73fc04d67003b1f0d62113b6cb704cf3fb698e286464caa8"
+    url = "https://gist.github.com/Klafyvel/ed9972c778439fb4bf0cad71a4925584/raw/5049b6d3ab40e13d38f642f646703370fa6a9103.tar.gz"
+
+[ATmegaSeries]
+lazy = true
+git-tree-sha1 = "57ab7dc933379e0c2a29b560bd820e52ab9014b3"
+
+    [[ATmegaSeries.download]]
+    sha256 = "09ae6d93d2b86ec9d928d11a4fae3c3c3940f44df1b95d9dcd634c5a4b4cec43"
+    url = "https://gist.github.com/Klafyvel/499d713adc4417094f012a490d217e71/raw/57ab7dc933379e0c2a29b560bd820e52ab9014b3.tar.gz"
