@@ -28,31 +28,12 @@ This section summarizes a device's architecture, family, name, and memory layout
 Device
 AdressSpace
 MemorySegment
-```
-
-## Peripheral modules summary
-This section describes the peripheral modules available on a device.
-
-```@docs
 DeviceModule
 Instance
 RegisterGroup
 Signal
-```
-
-## Interrupts
-
-```@docs
 Interrupt
-```
-
-## Intefaces
-```@docs
 Interface
-```
-
-## Property groups
-```@docs
 PropertyGroup
 Property
 ```

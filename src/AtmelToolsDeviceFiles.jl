@@ -2,7 +2,8 @@ module AtmelToolsDeviceFiles
 
 using DocStringExtensions
 using LazyArtifacts
-using XML
+using OrderedCollections: OrderedDict
+import XML
 
 include("types.jl")
 include("parsing.jl")
@@ -20,6 +21,9 @@ devicefilepath(dev::AtmelToolsDeviceFilePath) = dev.path
 devicefilepath(path::AbstractString) = path
 
 include("atmelseries.jl")
+
+include("precompile.jl")
+_precompile_()
 
 public AtmelLibrary
 
