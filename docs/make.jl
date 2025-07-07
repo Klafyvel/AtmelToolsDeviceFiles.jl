@@ -12,7 +12,7 @@ makedocs(;
         edit_link = "main",
         assets = String[],
         size_threshold_ignore = [
-            "atmel-series.md"
+            "atmel-series.md",
         ]
     ),
     pages = [

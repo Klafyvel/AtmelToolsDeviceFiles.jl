@@ -43,7 +43,7 @@ The equivalent un-wrapped case would be:
 </tag>
 ```
 """
-_has_wrapper_children(::Type{T}) where T = false
+_has_wrapper_children(::Type{T}) where {T} = false
 _has_wrapper_children(::Type{AVRToolsDeviceFile}) = true
 _has_wrapper_children(::Type{Device}) = true
 _has_wrapper_children(::Type{Instance}) = true
@@ -62,12 +62,12 @@ end
 "Transform a field name into an XML attribute name."
 function _build_xml_attribute_name(fieldname)
     xmlname = rstrip(String(fieldname), '_')
-    xmlname = replace(xmlname, "_"=>"-")
+    xmlname = replace(xmlname, "_" => "-")
     return xmlname
 end
 
 "Generate the code to fetch an attribute given a field name and type."
-function _generate_attribute_fetching(name, ::Type{T}) where T
+function _generate_attribute_fetching(name, ::Type{T}) where {T}
     attributename = _build_xml_attribute_name(name)
     fetchcode = if T == String
         :(attributes[$attributename])
@@ -83,46 +83,60 @@ function _generate_attribute_fetching(name, ::Type{T}) where T
             error("Malformed file. Attribute $($attributename) is expected in node $node")
         end
     end
-    return (;fetchcode, checkcode)
+    return (; fetchcode, checkcode)
 end
 
-function _generate_attribute_fetching(name, ::Type{Union{T, Nothing}}) where T
+function _generate_attribute_fetching(name, ::Type{Union{T, Nothing}}) where {T}
     attributename = _build_xml_attribute_name(name)
     fetchcode = if T == String
         :(get(attributes, $attributename, nothing))
     elseif hasmethod(convert, (Type{T}, String))
-        :(if haskey(attributes, $attributename) convert($T, attributes[$attributename]) else nothing end)
+        :(
+            if haskey(attributes, $attributename)
+                convert($T, attributes[$attributename])
+            else
+                nothing
+            end
+        )
     elseif hasmethod(parse, (Type{T}, String))
-        :(if haskey(attributes, $attributename) parse($T, attributes[$attributename]) else nothing end)
+        :(
+            if haskey(attributes, $attributename)
+                parse($T, attributes[$attributename])
+            else
+                nothing
+            end
+        )
     else
         error("Unable to write attribute fetching expression for $name::$T.")
     end
     checkcode = :()
-    return (;fetchcode, checkcode)
+    return (; fetchcode, checkcode)
 end
 
 "Generate the codes to fetch a single struct child of an XML node."
 function _generate_single_child_fetching(name, ::Type{T}) where {T <: AbstractATDF}
     attributename = _build_xml_attribute_name(name)
-    return (condition=:(t == $attributename), type=T, variable=name, attributename=attributename, fetchcode=quote
-        if isnothing($name)
-            $name = node_to_atdf($T, child)
-        else
-            error("Expected only one $($attributename) as direct child of $node.")
-        end
-    end)
+    return (
+        condition = :(t == $attributename), type = T, variable = name, attributename = attributename, fetchcode = quote
+            if isnothing($name)
+                $name = node_to_atdf($T, child)
+            else
+                error("Expected only one $($attributename) as direct child of $node.")
+            end
+        end,
+    )
 end
 
 "Generate the expected tag name of children corresponding to a `fieldname`."
 function _generate_children_name(fieldname)
-    xmlname = replace(String(fieldname), r"ies$"=>"y")
+    xmlname = replace(String(fieldname), r"ies$" => "y")
     xmlname = rstrip(xmlname, 's')
-    xmlname = replace(xmlname, "_"=>"-")
+    xmlname = replace(xmlname, "_" => "-")
     return xmlname
 end
 "Generate the expected wrapper tag name of children corresponding to a `fieldname`."
 function _generate_wrapper_children_name(fieldname)
-    xmlname = replace(String(fieldname), "_"=>"-")
+    xmlname = replace(String(fieldname), "_" => "-")
     return xmlname
 end
 function _fetch_wrapped_children(::Type{T}, node, name) where {T <: AbstractATDF}
@@ -144,19 +158,23 @@ function _generate_wrapped_children_fetching(name, ::Type{Vector{T}}) where {T <
     if hasmethod(_special_wrapped_children_name, (Type{T}, String))
         tagname = _special_wrapped_children_name(T, tagname)
     end
-    return (condition=:(t == $wrappertagname), type=T, variable=name, fetchcode= quote
-        append!($name, _fetch_wrapped_children($T, child, $tagname))
-    end)
+    return (
+        condition = :(t == $wrappertagname), type = T, variable = name, fetchcode = quote
+            append!($name, _fetch_wrapped_children($T, child, $tagname))
+        end,
+    )
 end
 "Generate the codes to fetch struct children of an XML node."
 function _generate_children_fetching(name, ::Type{Vector{T}}) where {T <: AbstractATDF}
     tagname = _generate_children_name(name)
-    return (condition=:(t == $tagname), type=T, variable=name, fetchcode= quote
-        push!($name, node_to_atdf($T, child))
-    end)
+    return (
+        condition = :(t == $tagname), type = T, variable = name, fetchcode = quote
+            push!($name, node_to_atdf($T, child))
+        end,
+    )
 end
 
-@generated function node_to_atdf(dest::Type{T}, node::XML.Node) where {T<:AbstractATDF}
+@generated function node_to_atdf(dest::Type{T}, node::XML.Node) where {T <: AbstractATDF}
     #=
     The generated function comprises three sections. First variable initialization,
     where we fetch the attributes and initialize the children. Then a for loop
@@ -165,12 +183,12 @@ end
     block where we build the final object.
     =#
     # First we explore the fields of the struct `dest` and determine what is
-    # an attribute, what is a single struct child, and what is an array of children. 
+    # an attribute, what is a single struct child, and what is an array of children.
     attributesfetching = []
     singlechildfetching = []
     multiplechildrenfetching = []
     objectbuilding = []
-    for (t,n) in zip(fieldtypes(T), fieldnames(T))
+    for (t, n) in zip(fieldtypes(T), fieldnames(T))
         if t <: AbstractATDF
             push!(singlechildfetching, _generate_single_child_fetching(n, t))
             push!(objectbuilding, n)
@@ -206,7 +224,7 @@ end
     # Then, if required, we build the for loop that iterates over the children.
     if !isempty(singlechildfetching) || !isempty(multiplechildrenfetching)
         errorblock = :(error("Malformed file, unexpected tag $t: $child direct child of $node."))
-        ifelseblock = foldr([singlechildfetching..., multiplechildrenfetching...], init=errorblock) do child,r
+        ifelseblock = foldr([singlechildfetching..., multiplechildrenfetching...], init = errorblock) do child, r
             Expr(:elseif, child.condition, child.fetchcode, r)
         end
         ifelseblock.head = :if
@@ -216,7 +234,13 @@ end
     for child in singlechildfetching
         varname = child.variable
         attributename = child.attributename
-        push!(finalcode, :(if isnothing($varname) error("Malformed file. Node $node expected a child $($attributename).") end))
+        push!(
+            finalcode, :(
+                if isnothing($varname)
+                    error("Malformed file. Node $node expected a child $($attributename).")
+                end
+            )
+        )
     end
     # Finaly, we generate the code that builds the returned object.
     push!(finalcode, Expr(:call, T, objectbuilding...))

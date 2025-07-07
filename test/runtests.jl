@@ -6,7 +6,7 @@ using Aqua
     @testset "Code quality (Aqua.jl)" begin
         # unbound_args is broken for our code generation that relies on dispatching
         # on Type{Union{Nothing, T}}.
-        Aqua.test_all(AtmelToolsDeviceFiles, unbound_args=false)
+        Aqua.test_all(AtmelToolsDeviceFiles, unbound_args = false)
     end
     include("jet.jl")
     include("artifacts.jl")
