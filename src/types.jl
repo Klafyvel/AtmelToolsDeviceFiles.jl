@@ -1,3 +1,6 @@
+"""
+Abstract supertype for parsing ATDF.
+"""
 abstract type AbstractATDF end
 
 """
@@ -91,7 +94,7 @@ struct Instance <: AbstractATDF
     register_group::RegisterGroup
     "See also [`Signal`](@ref)."
     signals::Vector{Signal}
-    "See also [`InstancePara`](@ref)."
+    "See also [`InstanceParam`](@ref)."
     parameters::Vector{InstanceParam}
 end
 

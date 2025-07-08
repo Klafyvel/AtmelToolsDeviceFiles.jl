@@ -19,10 +19,11 @@ makedocs(;
         "Home" => "index.md",
         "Device definitions" => "types.md",
         "Available devices" => "atmel-series.md",
+        "Internals" => "internals.md",
     ],
 )
 
 deploydocs(;
-    repo = "github.com/klafyvel/AtmelToolsDeviceFiles.jl",
+    repo = "github.com/Klafyvel/AtmelToolsDeviceFiles.jl",
     devbranch = "main",
 )

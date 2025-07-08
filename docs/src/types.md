@@ -30,6 +30,7 @@ AdressSpace
 MemorySegment
 DeviceModule
 Instance
+InstanceParam
 RegisterGroup
 Signal
 Interrupt
@@ -43,7 +44,9 @@ This contains the extended description of available peripheral modules.
 ```@docs
 PeripheralModule
 PeripheralRegisterGroup
+PeripheralRegisterGroupMode
 PeripheralRegister
+RegisterMode
 PeripheralBitField
 PeripheralValueGroup
 PeripheralValue
