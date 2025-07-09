@@ -3,6 +3,8 @@ function Base.parse(::Type{AVRToolsDeviceFile}, x)
     return node_to_atdf(doc)
 end
 
+children_elements(node::XML.Node) = filter(c -> XML.nodetype(c) == XML.Element, XML.children(node)) |> collect
+
 """
     node_to_atdf([dest::Type{T},] node::XML.Node) where {T <: AbstractATDF}
 
@@ -14,7 +16,7 @@ instance.
 function node_to_atdf(x::XML.Node)
     t = XML.nodetype(x)
     if t == XML.Document
-        children = something(XML.children(x), XML.Node[])
+        children = something(children_elements(x), XML.Node[])
         i = findfirst(children) do child
             XML.nodetype(child) == XML.Element && XML.tag(child) == "avr-tools-device-file"
         end
@@ -67,7 +69,7 @@ _special_wrapped_children_name(::Type{DeviceModule}, predicted) = if predicted =
 else
     return predicted
 end
-_special_wrapped_children_name(::Type{InstanceParam}, predicted) = if predicted == "parameter"
+_special_wrapped_children_name(::Type{Parameter}, predicted) = if predicted == "parameter"
     return "param"
 else
     return predicted
@@ -98,7 +100,13 @@ function _generate_attribute_fetching(name, ::Type{T}) where {T}
     elseif hasmethod(convert, (Type{T}, String))
         :(convert($T, attributes[$attributename]))
     elseif hasmethod(parse, (Type{T}, String))
-        :(parse($T, attributes[$attributename]))
+        :(
+            try
+                parse($T, attributes[$attributename])
+            catch e
+                error("Malformed file. Could not parse attribute $($attributename) in node $node")
+            end
+        )
     else
         error("Unable to write attribute fetching expression for $name::$T.")
     end
@@ -151,7 +159,19 @@ function _generate_single_child_fetching(name, ::Type{T}) where {T <: AbstractAT
             else
                 error("Expected only one $($attributename) as direct child of $node.")
             end
-        end,
+        end, required = true,
+    )
+end
+function _generate_single_child_fetching(name, ::Type{Union{T, Nothing}}) where {T <: AbstractATDF}
+    attributename = _build_xml_attribute_name(name)
+    return (
+        condition = :(t == $attributename), type = T, variable = name, attributename = attributename, fetchcode = quote
+            if isnothing($name)
+                $name = node_to_atdf($T, child)
+            else
+                error("Expected only one $($attributename) as direct child of $node.")
+            end
+        end, required = false,
     )
 end
 
@@ -199,7 +219,7 @@ the given XML `tag`. Return a vector of `childtype`. Used by the code generated 
 """
 function _fetch_wrapped_children(::Type{T}, node, name) where {T <: AbstractATDF}
     result = T[]
-    for child in something(XML.children(node), XML.Node[])
+    for child in something(children_elements(node), XML.Node[])
         t = XML.tag(child)
         if t ≠ name
             error("Malformed file, unexpected tag $t: $child direct child of $node")
@@ -245,7 +265,7 @@ end
     multiplechildrenfetching = []
     objectbuilding = []
     for (t, n) in zip(fieldtypes(T), fieldnames(T))
-        if t <: AbstractATDF
+        if t <: Union{AbstractATDF, Nothing}
             push!(singlechildfetching, _generate_single_child_fetching(n, t))
             push!(objectbuilding, n)
         elseif t <: AbstractVector && _has_wrapper_children(T)
@@ -284,10 +304,13 @@ end
             Expr(:elseif, child.condition, child.fetchcode, r)
         end
         ifelseblock.head = :if
-        child_fetching_expr = Expr(:for, :(child = XML.children(node)), Expr(:block, :(t = XML.tag(child)), ifelseblock))
+        child_fetching_expr = Expr(:for, :(child = children_elements(node)), Expr(:block, :(t = XML.tag(child)), ifelseblock))
         push!(finalcode, child_fetching_expr)
     end
     for child in singlechildfetching
+        if !child.required
+            continue
+        end
         varname = child.variable
         attributename = child.attributename
         push!(

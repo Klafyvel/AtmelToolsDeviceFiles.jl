@@ -10,4 +10,5 @@ using Aqua
     end
     include("jet.jl")
     include("artifacts.jl")
+    include("parse_all_known_atdf.jl")
 end

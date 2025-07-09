@@ -11,7 +11,7 @@ $(TYPEDFIELDS)
 struct Variant <: AbstractATDF
     ordercode::String
     package::String
-    pinout::String
+    pinout::Union{String, Nothing}
     speedmax::Int
     tempmax::Float64
     tempmin::Float64
@@ -25,9 +25,9 @@ Describes a memory segment.
 $(TYPEDFIELDS)
 """
 struct MemorySegment <: AbstractATDF
-    exec::String
+    exec::Union{String, Nothing}
     name::String
-    rw::String
+    rw::Union{String, Nothing}
     size::UInt
     start::UInt
     type::String
@@ -66,7 +66,7 @@ Describes a signal for a peripheral module.
 $(TYPEDFIELDS)
 """
 struct Signal <: AbstractATDF
-    function_::String
+    function_::Union{String, Nothing}
     group::String
     index::Union{UInt, Nothing}
     pad::String
@@ -74,11 +74,11 @@ struct Signal <: AbstractATDF
 end
 
 """
-Describes a parameter for an instance.
+Describes a parameter.
 
 $(TYPEDFIELDS)
 """
-struct InstanceParam <: AbstractATDF
+struct Parameter <: AbstractATDF
     name::String
     value::String
 end
@@ -91,11 +91,11 @@ $(TYPEDFIELDS)
 struct Instance <: AbstractATDF
     name::String
     "See also [`RegisterGroup`](@ref)."
-    register_group::RegisterGroup
+    register_group::Union{RegisterGroup, Nothing}
     "See also [`Signal`](@ref)."
     signals::Vector{Signal}
-    "See also [`InstanceParam`](@ref)."
-    parameters::Vector{InstanceParam}
+    "See also [`Parameter`](@ref)."
+    parameters::Vector{Parameter}
 end
 
 """
@@ -104,7 +104,7 @@ Describes a peripheral module.
 $(TYPEDFIELDS)
 """
 struct DeviceModule <: AbstractATDF
-    id::String
+    id::Union{String, Nothing}
     name::String
     "See also [`Instance`](@ref)."
     instances::Vector{Instance}
@@ -117,7 +117,7 @@ $(TYPEDFIELDS)
 """
 struct Interrupt <: AbstractATDF
     index::Int
-    module_instance::String
+    module_instance::Union{String, Nothing}
     name::String
 end
 
@@ -170,6 +170,8 @@ struct Device <: AbstractATDF
     interfaces::Vector{Interface}
     "See also [`PropertyGroup`](@ref)."
     property_groups::Vector{PropertyGroup}
+    "See also [`Parameter`](@ref)."
+    parameters::Vector{Parameter}
 end
 
 """
@@ -178,10 +180,10 @@ Describes a bit field in a register associated to a peripheral.
 $(TYPEDFIELDS)
 """
 struct PeripheralBitField <: AbstractATDF
-    caption::String
+    caption::Union{String, Nothing}
     mask::UInt
     name::String
-    rw::String
+    rw::Union{String, Nothing}
     values::Union{Nothing, String}
 end
 
@@ -202,11 +204,11 @@ Describes a register related to a peripheral.
 $(TYPEDFIELDS)
 """
 struct PeripheralRegister <: AbstractATDF
-    caption::String
+    caption::Union{String, Nothing}
     initval::Union{Nothing, UInt}
     name::String
     offset::UInt
-    rw::String
+    rw::Union{String, Nothing}
     size::Int
     "See also [`PeripheralBitField`](@ref)."
     bitfields::Vector{PeripheralBitField}
@@ -232,9 +234,9 @@ Describes a group of registers related to a peripheral.
 $(TYPEDFIELDS)
 """
 struct PeripheralRegisterGroup <: AbstractATDF
-    caption::String
+    caption::Union{String, Nothing}
     name::String
-    size::UInt
+    size::Union{UInt, Nothing}
     "See also [`PeripheralRegister`](@ref)."
     registers::Vector{PeripheralRegister}
     "See also [`PeripheralRegisterGroupMode`](@ref)."
@@ -258,7 +260,7 @@ Describes a set of values for a peripheral module.
 $(TYPEDFIELDS)
 """
 struct PeripheralValueGroup <: AbstractATDF
-    caption::String
+    caption::Union{String, Nothing}
     name::String
     "See also [`PeripheralValue`](@ref)"
     values::Vector{PeripheralValue}
@@ -272,11 +274,11 @@ $(TYPEDFIELDS)
 The modules listed here correspond to the short version listed as [`DeviceModule`](@ref) in the device definition.
 """
 struct PeripheralModule <: AbstractATDF
-    caption::String
-    id::String
+    caption::Union{String, Nothing}
+    id::Union{String, Nothing}
     name::String
     "See also [`PeripheralRegisterGroup`](@ref)."
-    register_group::PeripheralRegisterGroup
+    register_group::Vector{PeripheralRegisterGroup}
     "See also [`PeripheralValueGroup`](@ref)."
     value_groups::Vector{PeripheralValueGroup}
 end
@@ -288,7 +290,7 @@ $(TYPEDFIELDS)
 """
 struct Pin <: AbstractATDF
     pad::String
-    position::Int
+    position::String
 end
 
 """
@@ -317,3 +319,5 @@ struct AVRToolsDeviceFile <: AbstractATDF
     "See also [`Pinout`](@ref)."
     pinouts::Vector{Pinout}
 end
+
+Base.show(io::IO, x::AVRToolsDeviceFile) = print(io, "AVRToolsDeviceFile()")

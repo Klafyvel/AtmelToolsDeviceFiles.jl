@@ -26,11 +26,11 @@ This section summarizes a device's architecture, family, name, and memory layout
 
 ```@docs
 Device
+Parameter
 AdressSpace
 MemorySegment
 DeviceModule
 Instance
-InstanceParam
 RegisterGroup
 Signal
 Interrupt
